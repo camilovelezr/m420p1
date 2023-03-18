@@ -260,7 +260,7 @@ tmax = 119
 y_deaths_dc = values(dfdc[2, 13+55-1:end]); # vector of deaths
 # define V, Y, and I for the range of times we are interested in
 Vdc(t) = idc[t+7]
-Ydc(t) = deathsdc[t+7]
+Ydc(t) = deathsdc[t+55]
 Idc(t) = idc[t+55+7] - idc[t+55-7]
 # Euler scheme
 @inline function eulerdc(alpha::Real, beta::Real, N::Real, to::Int=120; h::Real=0.01)::NTuple{3,Vector{Float64}}
@@ -316,14 +316,16 @@ end
 Jd1dc = Dict{NTuple{5,Float64},Float64}()
 
 Threads.nthreads()
-Threads.@threads for α in 0.05:0.01:0.2
-    Threads.@threads for r0 in 1.5:0.1:1.9
-        Threads.@threads for nn in 2:0.5:10
-            β = r0 * α
-            N = population_dc * nn / 100
-            Ss, Is, Rs = eulerdc(α, β, N)
-            γ̂ = optGammap1(Rs, Ydc)
-            Jd1dc[(α, β, r0, N, γ̂)] = J1dc(γ̂, Is, Rs, 1)
+@time begin
+    Threads.@threads for α in 0.05:0.01:0.2
+        Threads.@threads for r0 in 1.5:0.1:1.9
+            Threads.@threads for nn in 2:0.5:10
+                β = r0 * α
+                N = population_dc * nn / 100
+                Ss, Is, Rs = eulerdc(α, β, N)
+                γ̂ = optGammap1(Rs, Ydc)
+                Jd1dc[(α, β, r0, N, γ̂)] = J1dc(γ̂, Is, Rs, 1)
+            end
         end
     end
 end
@@ -353,7 +355,7 @@ plot!(0:119, γ̂ * Rs, label="Simulated")
 plot!(title="DC Observed vs Simulated Deaths" * "\n" * L"p=1")
 Plots.svg("dcdeathsp1");
 Jd1bdc = Dict{NTuple{5,Float64},Float64}()
-Threads.@threads for α in 0.07:0.01:0.2
+Threads.@threads for α in 0.07:0.01:0.25
     Threads.@threads for r0 in 1.7:0.1:2.1
         Threads.@threads for nn in 2.5:0.5:4
             β = r0 * α
